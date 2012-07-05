@@ -37,14 +37,14 @@ BEGIN	{
 		$0 = left middle right
 	}
 	# Surround ${blah} with double quotes
-	while( match( $0, /[^"]\$[{][^]"]*[}]/ ) > 0 )	{
+	while( match( $0, /[^"]\$[{][^}"]*[}]/ ) > 0 )	{
 		left   = substr($0,0,RSTART)
 		middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
 		right  = substr($0,RSTART+RLENGTH)
 		$0 = left middle right
 	}
 	# Surround $(blah) with double quotes
-	while( match( $0, /[^"]\$[(][^]]"*[)]/ ) > 0 )	{
+	while( match( $0, /[^"]\$[(][^)]"*[)]/ ) > 0 )	{
 		left   = substr($0,0,RSTART)
 		middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
 		right  = substr($0,RSTART+RLENGTH)
