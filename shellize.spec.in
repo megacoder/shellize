@@ -12,7 +12,8 @@ Source: http://ftp.megacoder.com/shellize/%{name}-%{ver}.tar.gz
 License: GPLv2
 URL: http://www.megacoder.com/
 Group: Applications/System
-Buildroot: %{_tmppath}/%{name}-root
+BuildRoot: %{_tmppath}/%{name}-root
+BuildArch: noarch
 
 %description
 Convert shell script into pidgin make(1).
