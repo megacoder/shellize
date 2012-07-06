@@ -1,5 +1,10 @@
 #!/bin/awk -f
 
+function mangle( s )	{
+	strings[ ++nStrings ] = s
+	return( sprintf( "\1%d;", nStrings ) )
+}
+
 BEGIN	{
 }
 
@@ -10,45 +15,36 @@ BEGIN	{
 	while( match( $0, /'([^']|\\')*'/) > 0 )	{
 		left   = substr($0,0,RSTART-1)
 		middle = substr($0,RSTART,RLENGTH)
-		# printf( "Hiding single [%s].\n", middle )
-		strings[ ++nStrings ] = middle
-		middle = sprintf( "\1%d;", nStrings )
 		right  = substr($0,RSTART+RLENGTH)
-		# printf( "%s|%s|%s\n", left, middle, right )
-		$0 = left middle right
+		$0 = left mangle( middle ) right
 	}
 	# Hide double-quote strings
 	while( match( $0, /\"([^\"]|\\\")*\"/) > 0 )	{
 		left   = substr($0,0,RSTART-1)
 		middle = substr($0,RSTART,RLENGTH)
-		# printf( "Hiding double [%s].\n", middle )
-		strings[ ++nStrings ] = middle
-		middle = sprintf( "\1%d;", nStrings )
 		right  = substr($0,RSTART+RLENGTH)
-		# printf( "%s|%s|%s\n", left, middle, right )
-		$0 = left middle right
+		$0 = left mangle( middle ) right
 	}
-	# Enclose $blah into ${blah}
+	# Enclose $blah into "${blah}"
 	while( match( $0, /\$[A-Za-z0-9_][A-Za-z0-9_]*/ ) > 0 )	{
 		left   = substr($0,0,RSTART-1)
-		middle = "${" substr($0,RSTART+1,RLENGTH-1) "}"
+		middle = "\"${" substr($0,RSTART+1,RLENGTH-1) "}\""
 		right  = substr($0,RSTART+RLENGTH)
-		# printf( "%s|%s|%s\n", left, middle, right )
-		$0 = left middle right
+		$0 = left mangle( middle ) right
 	}
-	# Surround ${blah} with double quotes
-	while( match( $0, /[^"]\$[{][^}"]*[}]/ ) > 0 )	{
-		left   = substr($0,0,RSTART)
-		middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
+	# Enclose ${blah} into "${blah}"
+	while( match( $0, /\${[A-Za-z0-9_][A-Za-z0-9_]*}/ ) > 0 )	{
+		left   = substr($0,0,RSTART-1)
+		middle = "\"" substr($0,RSTART,RLENGTH) "\""
 		right  = substr($0,RSTART+RLENGTH)
-		$0 = left middle right
+		$0 = left mangle( middle ) right
 	}
 	# Surround $(blah) with double quotes
 	while( match( $0, /[^"]\$[(][^)]"*[)]/ ) > 0 )	{
 		left   = substr($0,0,RSTART)
 		middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
 		right  = substr($0,RSTART+RLENGTH)
-		$0 = left middle right
+		$0 = left mangle( middle ) right
 	}
 	# Restore strings
 	while( match( $0, /\1[0-9][0-9]*;/ ) > 0 )	{
