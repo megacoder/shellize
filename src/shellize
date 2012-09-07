@@ -6,6 +6,8 @@ function mangle( s )	{
 }
 
 BEGIN	{
+	quote_braces = 1
+	quote_shell  = 1
 }
 
 {
@@ -18,13 +20,6 @@ BEGIN	{
 		right  = substr($0,RSTART+RLENGTH)
 		$0 = left mangle( middle ) right
 	}
-	# Hide double-quote strings
-	while( match( $0, /\"([^\"]|\\\")*\"/) > 0 )	{
-		left   = substr($0,0,RSTART-1)
-		middle = substr($0,RSTART,RLENGTH)
-		right  = substr($0,RSTART+RLENGTH)
-		$0 = left mangle( middle ) right
-	}
 	# Enclose $blah into "${blah}"
 	while( match( $0, /\$[A-Za-z0-9_][A-Za-z0-9_]*/ ) > 0 )	{
 		left   = substr($0,0,RSTART-1)
@@ -32,19 +27,30 @@ BEGIN	{
 		right  = substr($0,RSTART+RLENGTH)
 		$0 = left mangle( middle ) right
 	}
-	# Enclose ${blah} into "${blah}"
-	while( match( $0, /\${[A-Za-z0-9_][A-Za-z0-9_]*}/ ) > 0 )	{
+	# Hide double-quote strings
+	while( match( $0, /\"([^\"]|\\\")*\"/) > 0 )	{
 		left   = substr($0,0,RSTART-1)
-		middle = "\"" substr($0,RSTART,RLENGTH) "\""
+		middle = substr($0,RSTART,RLENGTH)
 		right  = substr($0,RSTART+RLENGTH)
 		$0 = left mangle( middle ) right
 	}
+	# Enclose ${blah} into "${blah}"
+	if( quote_braces )	{
+		while( match( $0, /\${[A-Za-z0-9_][A-Za-z0-9_]*}/ ) > 0 ) {
+			left   = substr($0,0,RSTART-1)
+			middle = "\"" substr($0,RSTART,RLENGTH) "\""
+			right  = substr($0,RSTART+RLENGTH)
+			$0     = left mangle( middle ) right
+		}
+	}
 	# Surround $(blah) with double quotes
-	while( match( $0, /[^"]\$[(][^)]"*[)]/ ) > 0 )	{
-		left   = substr($0,0,RSTART)
-		middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
-		right  = substr($0,RSTART+RLENGTH)
-		$0 = left mangle( middle ) right
+	if( quote_shell )	{
+		while( match( $0, /[^"]\$[(][^)]"*[)]/ ) > 0 )	{
+			left   = substr($0,0,RSTART)
+			middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
+			right  = substr($0,RSTART+RLENGTH)
+			$0 = left mangle( middle ) right
+		}
 	}
 	# Restore strings
 	while( match( $0, /\1[0-9][0-9]*;/ ) > 0 )	{
