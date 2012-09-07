@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT([shellize], [0.0.4], [Tommy.Reynolds@MegaCoder.com])
+AC_INIT([shellize], [0.0.5], [Tommy.Reynolds@MegaCoder.com])
 
 AM_INIT_AUTOMAKE
 
