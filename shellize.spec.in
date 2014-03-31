@@ -34,7 +34,7 @@ Convert shell script into pidgin make(1).
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING README INSTALL NEWS LICENSE TODO
+%doc AUTHORS COPYING README.md README INSTALL NEWS LICENSE TODO
 %{_bindir}/%{name}
 
 %changelog
