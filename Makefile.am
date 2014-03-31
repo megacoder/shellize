@@ -11,3 +11,6 @@ EXTRA_DIST=\
 
 README: README.md
 	markown2 $< | lynx -stdin -dump >$@
+
+README.html: README.md
+	markdown $< >$@
