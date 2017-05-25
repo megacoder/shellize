@@ -1,0 +1,86 @@
+#!/bin/awk -f
+
+function mangle( s )	{
+	strings[ ++nStrings ] = s
+	return( sprintf( "\1%d;", nStrings ) )
+}
+
+BEGIN	{
+	quote_braces = 0
+	quote_shell  = 0
+	printf( "ARGC=%d\n", ARGC )
+	for( arg in ARGV )	{
+		printf( "ARGV[%d] = |%s|\n", arg, ARGV[arg] )
+	}
+	for( optind = 1; optind < ARGC; ++optind )	{
+		optarg = ARGV[ optind ]
+		printf( "ARG=|%s|\n", optarg )
+		if( optarg == "--shell" )	{
+			quote_shell = 1
+			ARGV[ optind ] = ""
+			print optarg
+		} else if( optarg == "--braces" )	{
+			quote_braces = 1
+			ARGV[ optind ] = ""
+			print optarg
+		}
+	}
+	if( (quote_braces+quote_shell) == 0 )	{
+		quote_braces = 1
+		quote_shell  = 1
+	}
+}
+
+{
+	nStrings = 0
+	delete strings
+	# Hide single-quote strings
+	while( match( $0, /'([^']|\\')*'/) > 0 )	{
+		left   = substr($0,0,RSTART-1)
+		middle = substr($0,RSTART,RLENGTH)
+		right  = substr($0,RSTART+RLENGTH)
+		$0 = left mangle( middle ) right
+	}
+	# Hide double-quote strings
+	while( match( $0, /\"([^\"]|\\\")*\"/) > 0 )	{
+		left   = substr($0,0,RSTART-1)
+		middle = substr($0,RSTART,RLENGTH)
+		right  = substr($0,RSTART+RLENGTH)
+		$0 = left mangle( middle ) right
+	}
+	# Enclose $blah into "${blah}"
+	while( match( $0, /\$[A-Za-z0-9_][A-Za-z0-9_]*/ ) > 0 )	{
+		left   = substr($0,0,RSTART-1)
+		middle = "\"${" substr($0,RSTART+1,RLENGTH-1) "}\""
+		right  = substr($0,RSTART+RLENGTH)
+		$0 = left mangle( middle ) right
+	}
+	# Enclose ${blah} into "${blah}"
+	if( quote_braces )	{
+		while( match( $0, /\${[A-Za-z0-9_][A-Za-z0-9_]*}/ ) > 0 ) {
+			left   = substr($0,0,RSTART-1)
+			middle = "\"" substr($0,RSTART,RLENGTH) "\""
+			right  = substr($0,RSTART+RLENGTH)
+			$0     = left mangle( middle ) right
+		}
+	}
+	# Surround $(blah) with double quotes
+	if( quote_shell )	{
+		while( match( $0, /[^"]\$[(][^)]"*[)]/ ) > 0 )	{
+			left   = substr($0,0,RSTART)
+			middle = "\"" substr($0,RSTART+1,RLENGTH-1) "\""
+			right  = substr($0,RSTART+RLENGTH)
+			$0 = left mangle( middle ) right
+		}
+	}
+	# Restore strings
+	while( match( $0, /\1[0-9][0-9]*;/ ) > 0 )	{
+		left   = substr($0,0,RSTART-1)
+		key    = substr($0,RSTART,RLENGTH)
+		middle = strings[ substr(key,2) + 0 ]
+		right  = substr($0,RSTART+RLENGTH)
+		$0 = left middle right
+	}
+	# Done with this line
+	print $0
+}
